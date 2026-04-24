@@ -1,15 +1,12 @@
-import javafx.stage.FileChooser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.json.JSONWriter;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
-import javax.swing.JFileChooser;
 
 
 //Class is designed purely to create and modify files.
@@ -17,15 +14,29 @@ import javax.swing.JFileChooser;
 public class FileCreatorAndManipulator {
     //mainDir is the static (non programming def) location that allows for easy traversing, its the root folder of this project.
     String mainDir;
-    String currentPath;
-    String preSavedArray;
+    //These are here so I am not using magic variables
+    public static final String COORDS = "Coords";
+    public static final String FILE_LOCATION = "PhotoLocation";
+    public static final String AGE = "Age";
+    public static final String SKIN_COLOR = "SkinColor";
+    public static final String HAIR_TYPE = "HairType";
+    public static final String HAIR_COLOR = "HairColor";
+    public static final String EYE_COLOR = "EyeColor";
+    public static final String NAME = "Name";
+    public static final String RACE = "Race";
+    public static final String BIRTH_DAY = "BirthDay";
+    public static final String DEATH_DAY = "DeathDay";
+    public static final String LOCATION = "Position";
+    public static final String WEIGHT = "Weight";
+    public static final String HEIGHT = "Height";
+    public static final String PARAGRAPH = "Paragraph";
     //This is so that everything can be saved easily.
-    private ArrayList<ReferencePaths> temperaryphotos = new ArrayList<>();
+    private ArrayList<ReferencePaths> photos = new ArrayList<>();
+    private ArrayList<ReferencePaths> paragraphs = new ArrayList<>();
 
     //Might not be needed, no planned usage yet.
     public FileCreatorAndManipulator(String name){
         mainDir = name;
-        //addImageToPaneArray();
     }
     /*
     Creates a blank new folder uses the first letter of the folder name and sorts it
@@ -36,7 +47,6 @@ public class FileCreatorAndManipulator {
     public void createNewFile(String fileName){
         //Check what folder FileName goes into
         try {
-            //char fileFirst = fileName.charAt(0);
             File location = new File(mainDir);
             //todo Create a unique error to check if a file exists. If it doesn't it should save and exit immediately
             //Guarentees that user knows where the file resources file goes incase of accidentily deleted.
@@ -98,11 +108,11 @@ public class FileCreatorAndManipulator {
             JSONTokener token = new JSONTokener(new FileReader(fileLocation));
             JSONObject newObject = new JSONObject(token);
             //"Physical aspects of a person"
-            newObject.append("Position", new JSONArray().put(0).put(0));
-            newObject.append("Name:", "N/A").append("BirthDay", -1).append("DeathDay", -1)
-                    .append("Age", -1).append("Weight", -1).append("Height", -1).append("Race", "N/A")
-                    .append("SkinColor", "N/A").append("EyeColor", "n/a")
-                    .append("HairType", "N/A").append("HairColor", "N/a");
+            newObject.append(LOCATION, new JSONArray().put(0).put(0));
+            newObject.append(NAME, "N/A").append(BIRTH_DAY, -1).append(DEATH_DAY, -1)
+                    .append(AGE, -1).append(WEIGHT, -1).append(HEIGHT, -1).append(RACE, "N/A")
+                    .append(SKIN_COLOR, "N/A").append(EYE_COLOR, "n/a")
+                    .append(HAIR_TYPE, "N/A").append(HAIR_COLOR, "N/a");
             try(FileWriter write = new FileWriter(fileLocation)){
                 write.write(newObject.toString(4));
             }
@@ -110,64 +120,144 @@ public class FileCreatorAndManipulator {
             throw new RuntimeException(e);
         }
     }
+
     //This was made because I have issues with JSON that I need to learn still. I think it's the difference between
     //FileWriter and whatever JSON uses to file write. JSON's version of writing to a file will freak out if {} doesn't
     //exist. FileWriter just writes to a file.
     public void jsonQuickSet(String fileLocation) throws IOException {
-        FileWriter setJSON = new FileWriter(fileLocation);
+        try(FileWriter setJSON = new FileWriter(fileLocation)) {
             setJSON.write("{}");
-            setJSON.flush();
-            setJSON.close();
+        }
     }
     //Ahead of time message to tell myself that this may work with any file with a simple change to check file is editable.
-    public String addImageToPaneArray(String photoPath){
+    //todo Next time looking at code look at the alternative solution found, if it is significantly better delete these 2 methods.
+    public void addImageToPaneArray(ReferencePaths photoPath){
         //Simply creates a new file import gui then applies it to an integer to varify. Then gets file path
 
-        File testFile = new File(photoPath);
-        if(!testFile.exists()){
-            return null;
-        }
+        File testFile = new File(photoPath.returnFileLocation());
+
             try {
                 BufferedImage imageCheck = ImageIO.read(testFile);
                 if(imageCheck !=null){
-                    return photoPath;
+                    photos.add(photoPath);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+//todo I might do what this says below in a later update, I am still trying to understand how to make a new tab? Which then can hold multiple instances of objects.
         //From here it will push the file location to the MemoryNode class, it will store it in the preSavedArray ArrayList.
         //The preSavedArray ArrayList holds file locations of items that aren't saved to the array yet.
         //Plan may change to create a temp folder instead to save the image location there incase file gets moved.
-        return null;
     }
-    //Takes the path of said person and creates a new empty text file. This text file is a json file that holds grid
-    //location and the actual paragraph.
-    public void createNewTextFile(String personFile, String name) throws IOException {
-        File textPath = new File(new File(mainDir, personFile),"TextFiles");
-        File newTextFile = new File(textPath.getAbsolutePath(), name+".json");
-        if(!newTextFile.exists()){
-            newTextFile.createNewFile();
-            //jsonQuickSet(newTextFile.getAbsolutePath());
-            JSONObject paragraphContext = new JSONObject();
-            paragraphContext.put("Coords", new JSONArray().put(0).put(0));
-            paragraphContext.put("Paragraph", "tempParagraph");
-            try(FileWriter write = new FileWriter(newTextFile.getAbsolutePath(), true)) {
-                write.write(paragraphContext.toString(4));
-            }
-        }
+    //Simply adds a new file for text array. The reason its like this is because it makes it easier to read the files directly instead of via code.
+    public void addTextToArray(ReferencePaths textToBeAdded){
+        paragraphs.add(textToBeAdded);
     }
     /*
     Saves the file by converting metadata into a savable format which then can be stored
     in a json file. This includes positions, text, and photos primarily.
      */
-    public void saveFile(ArrayList<Object> paneObjects){
-
+        //todo If there is a ton of magic variables inside of methods I was just too lazy at the time to fix. Should work properly otherwise.
+    public void saveFile(String fileLocation, ArrayList<ReferencePaths> photos, ArrayList<ReferencePaths> paragraphs){
+        JSONArray savePhoto = new JSONArray();
+        for(ReferencePaths object:photos){
+            JSONObject newObject = new JSONObject();
+            newObject.put(COORDS, object.returnGridLocation());
+            newObject.put(FILE_LOCATION, object.returnFileLocation());
+            savePhoto.put(newObject);
+        }
+        //Right now this is psudocode because the file location will be a directory which means you need to use the file
+        //name to find the location of said corrosponding file through using the pattern given.
+        File photoLocation = new File(fileLocation, "Photos");
+        try(FileWriter savePoint = new FileWriter(new File(photoLocation, "photo.json"))){
+            savePoint.write(savePhoto.toString(4));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        int i = 1;
+        File textFolder = new File(fileLocation, "TextFiles");
+        File[] text = textFolder.listFiles();
+        if(text != null){
+            for(File deletable : text){
+                try {
+                    Files.delete(deletable.toPath());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                System.out.println(textFolder.length());
+            }
+        }
+        for(ReferencePaths current : paragraphs){
+            JSONObject currentText = new JSONObject();
+            currentText.put(COORDS, current.returnGridLocation());
+            //In this case returnFileLocation is being used as the text since the file location is arbitrary.
+            //This is because fileLocation is itself due to the fact I am using a JSON file as a location and text file.
+            //This will also likely be changed in the future for readability, but I am lazy right now.
+            //System.out.println(current.returnText());
+            currentText.put(PARAGRAPH, current.returnText());
+            File textFile = new File(textFolder.getAbsolutePath(), "text"+i+".json");
+            if(!textFile.exists()){
+                try {
+                    textFile.createNewFile();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            try(FileWriter savePoint = new FileWriter(textFile)){
+                savePoint.write(currentText.toString(4));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            i++;
+        }
     }
     /*
     Loads data and pushes it to javafx and other useful class objects.
      */
-    public void loadData(){
+    public boolean loadData(String location) throws FileNotFoundException {
+        File subject = new File(mainDir, location);
+        if(!subject.exists()){
+            System.out.println("File doesn't exist");
+            return false;
+        }
+        photos.clear();
+        paragraphs.clear();
 
+        //mainDir -> def reminder that main dir is the root directory which will be holding all of the info.
+        File subjectPhotos = new File(new File(subject, "Photos"), "photo.json");
+        JSONArray photoJSON = new JSONArray(new org.json.JSONTokener(new java.io.FileInputStream(subjectPhotos)));
+        for(Object object : photoJSON){
+            JSONObject photo = (JSONObject) object;
+            JSONArray photoCoords = (JSONArray) photo.get(COORDS);
+            //System.out.println((String) photo.get(FILE_LOCATION));
+            //Literally turning data into an object, thus the definition.
+            ReferencePaths photoObjectification = new ReferencePaths((String) photo.get(FILE_LOCATION), photoCoords.getDouble(0), photoCoords.getDouble(1));
+            photos.add(photoObjectification);
+        }
+        File subjectTexts = new File(subject, "TextFiles");
+        File[] textFiles = subjectTexts.listFiles();
+        if(textFiles != null) {
+            for (File textDoc : textFiles) {
+                    JSONObject text = new JSONObject(new org.json.JSONTokener(new java.io.FileInputStream(textDoc)));
+                    JSONArray textCoords = (JSONArray) text.get(COORDS);
+                    //Literally turning data into an object, thus the definition.
+                    ReferencePaths textObjectification = new ReferencePaths((String) text.get(PARAGRAPH), textCoords.getDouble(0), textCoords.getDouble(1));
+                    paragraphs.add(textObjectification);
+            }
+        }
+        return true;
+    }
+    //todo This will be added in a later updated version when I have it pull static characteristics like age.
+    public void returnStats(String location) throws FileNotFoundException {
+        File statsLocation = new File(new File(mainDir, location), location+"Stats.json");
+        JSONObject characteristics = new JSONObject(new org.json.JSONTokener(new java.io.FileInputStream(statsLocation)));
+
+    }
+    public ArrayList<ReferencePaths> returnText(){
+        return paragraphs;
+    }
+    public ArrayList<ReferencePaths> returnPhotos(){
+        return photos;
     }
     /*
     Checks a few obvious things about folders and deletes or modifies folders.
